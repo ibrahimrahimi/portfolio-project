@@ -15,7 +15,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # Password hashing setup
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecatd="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
     """Hash a password securely."""
@@ -28,6 +28,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(data: dict, expires_delta: timedelta = None):
     """Generate a JWT token."""
     to_encode = data.copy()
-    expire = datetime.now(datetime.timezone.utc) + (expires_delta if expires_delta else timedelta(minutes=15))
+    expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=15))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

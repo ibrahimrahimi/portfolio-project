@@ -5,7 +5,7 @@ app = FastAPI(title="Portfolio API")
 
 # Include API routes
 app.include_router(blogs.router)
-# app.include_router(users.router)
+app.include_router(users.router)
 
 @app.get("/")
 def root():
