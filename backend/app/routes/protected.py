@@ -4,7 +4,7 @@ from app.auth import get_current_user
 router = APIRouter(prefix="/protected", tags=["Protected Routes"])
 
 
-@router.get("/dashborad")
+@router.get("/dashboard")
 async def protected_dashboard(current_user: str = Depends(get_current_user)):
     """Only authenticated users can access this"""
     return {"message": "Welcome to your dashboard", "user": current_user}
