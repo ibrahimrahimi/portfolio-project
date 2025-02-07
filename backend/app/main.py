@@ -2,11 +2,18 @@ from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 from app.routes import blogs, users, auth
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI(title="Portfolio API")
 
-# Add Session Middlewar (Required for OAuth2)
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET_KEY", "thisismysecrectkey"))
+# Ensure secret key is set correctly
+SECRET_KEY = os.getenv("SESSION_SECRET_KEY", "thisismysecrectkey")
+
+# Add session middleware for OAuth authentication
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, session_cookie="oauth_session")
 
 # Include API routes
 app.include_router(blogs.router)
