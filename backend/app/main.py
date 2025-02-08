@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
-from app.routes import blogs, users, auth
+from app.routes import blogs, users, auth, protected
 import os
 from dotenv import load_dotenv
 
@@ -19,6 +19,7 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, session_cookie="oau
 app.include_router(blogs.router)
 app.include_router(users.router)
 app.include_router(auth.router)
+app.include_router(protected.router)
 
 @app.get("/")
 def root():
