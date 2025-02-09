@@ -66,7 +66,7 @@ async def auth_callback(request: Request, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user_info["email"]).first()
 
     if not db_user:
-        db_user = User(email=user_info["email"], password="oauth")
+        db_user = User(email=user_info["email"], password="oauth", role="user")
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
