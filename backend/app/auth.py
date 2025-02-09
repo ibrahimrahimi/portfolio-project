@@ -42,17 +42,26 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         # Decode JWT token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
-        
-        if email is None:
+        role = payload.get("role")
+
+        if email is None or role is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authentication token",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        return email
+        return {"email": email, "role": role}
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+def require_role(required_role: str):
+    """Dependency to enforce role-based access control."""
+    def role_dependency(user: dict = Depends(get_current_user)):
+        if user.get("role") != require_role:
+            raise HTTPException(status_code=403, detail="Permission denied")
+        return user
+    return role_dependency
