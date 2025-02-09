@@ -62,6 +62,9 @@ def require_role(required_role: str):
     """Dependency to enforce role-based access control."""
     def role_dependency(user: dict = Depends(get_current_user)):
         if user.get("role") != require_role:
-            raise HTTPException(status_code=403, detail="Permission denied")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied. Requires {required_role} role."
+            )        
         return user
     return role_dependency
