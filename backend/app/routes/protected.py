@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Depends
-from app.auth import get_current_user
+from app.auth import get_current_user, require_role
 
 router = APIRouter(prefix="/protected", tags=["Protected Routes"])
 
+# Only admins can access this
+@router.get("/dashboard")
+async def admin_dashboard(user: str = Depends(get_current_user)):
+    """Allow only admin users to view the dashboard."""
+    return {"message": f"Welcome to the admin dashboard, {user['email']}!"}
 
-@router.get("/admin/dashboard")
-async def protected_dashboard(current_user: str = Depends(get_current_user)):
-    """Only authenticated users can access this"""
-    return {"message": "Welcome to your dashboard", "user": current_user}
-
-
+# All authenticated users can access this
 @router.get("/profile")
-async def user_profile(current_user: str = Depends(get_current_user)):
-    """User profile, accessible only by logged-in users"""
-    return {"email":current_user, "message":"This is your profile!"}
+async def user_profile(user: str = Depends(get_current_user)):
+    """Allow any authenticated user to view their profile."""
+    return {"email": user["email"], "role": user["role"]}
