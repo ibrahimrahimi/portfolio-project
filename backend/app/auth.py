@@ -15,10 +15,6 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
-decoded = jwt.decode("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYnJhaGltcmFoaW1pbGF6aXJpQGdtYWlsLmNvbSIsImV4cCI6MTczOTI3Mzg0M30.WS1YMDel-t6YIkDVcwO0LUPWYZZEXEyEavSOOOXpKNY", "thisismysecrectkey", algorithms=["HS256"])
-print('this is the decoded jwt ----->', decoded)
-
-
 # Password hashing setup
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -47,7 +43,6 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
         role = payload.get("role")
-        print('This is the user and role ------>', email, role)
 
         if email is None or role is None:
             raise HTTPException(
@@ -63,14 +58,16 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-def require_role(required_role: str):
+def require_role(required_role: str):  
     """Dependency to enforce role-based access control."""
     def role_dependency(user: dict = Depends(get_current_user)):
-        print('this is the role ---->', user)
-        if user.get("role") != require_role:
+        
+        # Ensure case-insensitive and space-free comparison
+        if user.get('role').strip().lower() != required_role.strip().lower():
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied. Requires {required_role} role."
-            )        
+                detail=f"Access denied. Requires '{required_role}' role."
+            )
+        
         return user
     return role_dependency
