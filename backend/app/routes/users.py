@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr
 from datetime import timedelta
 from app.database import SessionLocal
 from app.models import User
-from app.auth import hash_password, verify_password, create_access_token
+from app.auth import hash_password, verify_password, create_tokens
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -43,7 +43,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     hashed_password = hash_password(user.password)
 
     # Create new user
-    new_user = User(email=user.email, password=hashed_password)
+    new_user = User(email=user.email, password=hashed_password, role="user")
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -62,6 +62,6 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid credentials!")
     
     # Generate JWT token
-    access_token = create_access_token(data={"sub": db_user.email}, expires_delta=timedelta(minutes=30))
+    tokens = create_tokens(data={"sub": db_user.email}, expires_delta=timedelta(minutes=30))
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return tokens
