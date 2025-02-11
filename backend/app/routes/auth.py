@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models import User
-from app.auth import create_access_token, hash_password, get_current_user, require_role
+from app.auth import create_tokens, hash_password, get_current_user, require_role
 from pydantic import BaseModel
 
 # Load environment variables
@@ -106,6 +106,6 @@ async def auth_callback(request: Request, db: Session = Depends(get_db)):
         db.refresh(db_user)
 
     # Generate JWT token
-    access_token = create_access_token(data={"sub": db_user.email, "role": db_user.role})
+    tokens = create_tokens(data={"sub": db_user.email, "role": db_user.role})
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return tokens
