@@ -90,7 +90,7 @@ async def auth_callback(request: Request, db: Session = Depends(get_db)):
     if not id_token:
         raise HTTPException(status_code=400, detail="Missing id_token in response")
 
-    # Extract user info from `userinfo` (instead of parsing id_token separately)
+    # Extract user info
     user_info = token.get("userinfo")
 
     if not user_info:
