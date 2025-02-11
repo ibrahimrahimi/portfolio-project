@@ -5,16 +5,22 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
+from jose import jwt, JWTError
 from app.models import User
 from app.auth import create_tokens, hash_password, get_current_user, require_role
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 # Load environment variables
 load_dotenv()
 
+# JWT Secret & Algorithm
+SECRET_KEY = os.getenv("SECRET_KEY", "thisismysecrectkey")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+REFRESH_TOKEN_EXPIRE_DAYS = 5
+
 # Initialize OAuth
 oauth = OAuth()
-
 oauth.register(
     name="google",
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
@@ -39,17 +45,23 @@ def get_db():
     finally:
         db.close()
 
+
 # User creation request model
 class UserCreate(BaseModel):
-    email: str
+    email: EmailStr
     password: str
     role: str
 
-@router.post("/create-user")
+
+# Define a model for refresh token requests
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+@router.post("/create-user", dependencies=[Depends(require_role("admin"))])
 async def create_user(
     user_data: UserCreate,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(require_role("admin"))
+    db: Session = Depends(get_db)
 ):
     """Admin can create new users"""
 
@@ -109,3 +121,27 @@ async def auth_callback(request: Request, db: Session = Depends(get_db)):
     tokens = create_tokens(data={"sub": db_user.email, "role": db_user.role})
 
     return tokens
+
+# Route to refresh the access token
+@router.post("/refresh")
+async def refresh_access_token(refresh_request: RefreshTokenRequest):
+    """Refresh access token using a valid refresh token."""
+    try:
+        refresh_token = refresh_request.refresh_token
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+
+        if email is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid refresh token!"
+            )
+
+        # Generate new access token
+        new_access_token = create_tokens(data={"sub": email})
+        return {"access_token": new_access_token, "token_type": "bearer"}
+    except JWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Could not validate refresh token!"
+        )
