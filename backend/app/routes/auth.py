@@ -41,20 +41,20 @@ def get_db():
 
 # User creation request model
 class UserCreate(BaseModel):
-    emai: str
+    email: str
     password: str
     role: str
 
 @router.post("/create-user")
 async def create_user(
-    user_data, UserCreate,
+    user_data: UserCreate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_role("admin"))
 ):
     """Admin can create new users"""
 
     # Check if user already exists
-    existing_user = db.Query(User).filter(User.email == user_data.email).first()
+    existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -65,7 +65,7 @@ async def create_user(
     hashed_password = hash_password(user_data.password)
 
     # Create new user
-    new_user = User(email=user_data.email, password=hash_password, role=user_data.role)
+    new_user = User(email=user_data.email, password=hashed_password, role=user_data.role)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
