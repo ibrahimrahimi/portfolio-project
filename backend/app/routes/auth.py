@@ -72,6 +72,6 @@ async def auth_callback(request: Request, db: Session = Depends(get_db)):
         db.refresh(db_user)
 
     # Generate JWT token
-    access_token = create_access_token(data={"sub": db_user.email})
+    access_token = create_access_token(data={"sub": db_user.email, "role": db_user.role})
 
     return {"access_token": access_token, "token_type": "bearer"}
