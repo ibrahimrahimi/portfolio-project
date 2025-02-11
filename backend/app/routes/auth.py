@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from authlib.integrations.starlette_client import OAuth
 from starlette.requests import Request
 import os
@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models import User
-from app.auth import create_access_token
+from app.auth import create_access_token, hash_password, get_current_user, require_role
+from pydantic import BaseModel
 
 # Load environment variables
 load_dotenv()
@@ -37,6 +38,39 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# User creation request model
+class UserCreate(BaseModel):
+    emai: str
+    password: str
+    role: str
+
+@router.post("/create-user")
+async def create_user(
+    user_data, UserCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_role("admin"))
+):
+    """Admin can create new users"""
+
+    # Check if user already exists
+    existing_user = db.Query(User).filter(User.email == user_data.email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this email already exists."
+        )
+    
+    # Hash the password
+    hashed_password = hash_password(user_data.password)
+
+    # Create new user
+    new_user = User(email=user_data.email, password=hash_password, role=user_data.role)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {"message": f"User {new_user.email} created successfully with role {new_user.role}"}
 
 # Google OAuth2 Login URL
 @router.get("/login/google")
